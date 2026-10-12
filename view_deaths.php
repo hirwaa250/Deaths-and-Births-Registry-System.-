@@ -4,12 +4,12 @@ require_login();
 
 $page_title = 'Death Records - Village Register System';
 
-// Pagination settings
+
 $records_per_page = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $records_per_page;
 
-// Search functionality
+
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $where_clause = '';
 $search_params = [];
@@ -22,18 +22,18 @@ if (!empty($search)) {
     $param_types = 'sssss';
 }
 
-// Get total records for pagination
-$count_query = "SELECT COUNT(*) as total FROM death_records d " . $where_clause;
+
+$count_query = "SELECT COUNT(*) as total FROM deaths d " . $where_clause;
 $count_result = execute_query($count_query, $param_types, $search_params);
 $total_records = $count_result ? $count_result->fetch_assoc()['total'] : 0;
 $total_pages = ceil($total_records / $records_per_page);
 
-// Get death records with pagination
-$query = "SELECT d.*, u.name as registered_by_name 
-          FROM death_records d 
+
+$query = "SELECT d.*, u.full_name as registered_by_name 
+          FROM deaths d 
           JOIN users u ON d.registered_by = u.id 
           $where_clause 
-          ORDER BY d.registration_date DESC 
+          ORDER BY d.registered_at DESC 
           LIMIT $records_per_page OFFSET $offset";
 
 $death_records = execute_query($query, $param_types, $search_params);
@@ -50,7 +50,7 @@ include 'includes/header.php';
             </a>
         </div>
         
-        <!-- Search Form -->
+
         <div class="card mb-4">
             <div class="card-body">
                 <form method="GET" action="" class="row g-3">
@@ -76,7 +76,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <!-- Records Table -->
+
         <div class="card">
             <div class="card-header">
                 <h5><i class="fas fa-list"></i> Death Records (<?php echo $total_records; ?> total)</h5>
@@ -105,7 +105,7 @@ include 'includes/header.php';
                                     <td>
                                         <strong><?php echo htmlspecialchars($record['deceased_name']); ?></strong>
                                     </td>
-                                    <td><?php echo date('M d, Y', strtotime($record['dod'])); ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($record['date_of_death'])); ?></td>
                                     <td>
                                         <small><?php echo htmlspecialchars(substr($record['cause_of_death'], 0, 50)) . (strlen($record['cause_of_death']) > 50 ? '...' : ''); ?></small>
                                     </td>
@@ -122,7 +122,7 @@ include 'includes/header.php';
                                         <small><?php echo htmlspecialchars($record['registered_by_name']); ?></small>
                                     </td>
                                     <td>
-                                        <small><?php echo date('M d, Y', strtotime($record['registration_date'])); ?></small>
+                                        <small><?php echo date('M d, Y', strtotime($record['registered_at'])); ?></small>
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
@@ -136,11 +136,16 @@ include 'includes/header.php';
                                                     title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </button>
+                                            <!-- Update (Edit) button only -->
+                                            <a href="edit_death.php?id=<?php echo $record['id']; ?>" 
+                                               class="btn btn-sm btn-warning" title="Edit Record">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
                                 
-                                <!-- View Modal -->
+                            
                                 <div class="modal fade" id="viewModal<?php echo $record['id']; ?>" tabindex="-1">
                                     <div class="modal-dialog modal-lg">
                                         <div class="modal-content">
@@ -153,14 +158,14 @@ include 'includes/header.php';
                                                     <div class="col-md-6">
                                                         <strong>Record ID:</strong> <?php echo $record['id']; ?><br>
                                                         <strong>Deceased Name:</strong> <?php echo htmlspecialchars($record['deceased_name']); ?><br>
-                                                        <strong>Date of Death:</strong> <?php echo date('F d, Y', strtotime($record['dod'])); ?><br>
+                                                        <strong>Date of Death:</strong> <?php echo date('F d, Y', strtotime($record['date_of_death'])); ?><br>
                                                         <strong>Family Contact:</strong> <?php echo htmlspecialchars($record['family_contact']); ?><br>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <strong>Village:</strong> <?php echo htmlspecialchars($record['village']); ?><br>
                                                         <strong>Sector:</strong> <?php echo htmlspecialchars($record['sector']); ?><br>
                                                         <strong>Registered By:</strong> <?php echo htmlspecialchars($record['registered_by_name']); ?><br>
-                                                        <strong>Registration Date:</strong> <?php echo date('F d, Y g:i A', strtotime($record['registration_date'])); ?>
+                                                        <strong>Registration Date:</strong> <?php echo date('F d, Y g:i A', strtotime($record['registered_at'])); ?>
                                                     </div>
                                                 </div>
                                                 <hr>
@@ -188,7 +193,7 @@ include 'includes/header.php';
                         </table>
                     </div>
                     
-                    <!-- Pagination -->
+        
                     <?php if ($total_pages > 1): ?>
                     <nav aria-label="Page navigation">
                         <ul class="pagination justify-content-center">

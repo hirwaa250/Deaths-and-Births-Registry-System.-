@@ -6,35 +6,40 @@ $page_title = 'Register Birth - Village Register System';
 $success = '';
 $error = '';
 
+if (isset($_GET['success'])) {
+    $success = htmlspecialchars($_GET['success']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Validate and sanitize input
+    
     $child_name = trim($_POST['child_name']);
-    $dob = $_POST['dob'];
+    $date_of_birth = $_POST['date_of_birth'];
+    $place_of_birth = trim($_POST['place_of_birth']);
+    $village = trim($_POST['village']);
+    $sector = trim($_POST['sector']);
     $gender = $_POST['gender'];
     $mother_name = trim($_POST['mother_name']);
     $father_name = trim($_POST['father_name']);
-    $village = trim($_POST['village']);
-    $sector = trim($_POST['sector']);
     
-    // Basic validation
-    if (empty($child_name) || empty($dob) || empty($gender) || empty($mother_name) || 
-        empty($father_name) || empty($village) || empty($sector)) {
+
+    if (empty($child_name) || empty($date_of_birth) || empty($place_of_birth) || empty($village) || empty($sector) || empty($gender) || empty($mother_name) || 
+        empty($father_name)) {
         $error = 'All fields are required.';
     } else {
-        // Check if date is not in the future
-        if (strtotime($dob) > time()) {
+        
+        if (strtotime($date_of_birth) > time()) {
             $error = 'Date of birth cannot be in the future.';
         } else {
-            // Insert birth record
-            $query = "INSERT INTO birth_records (child_name, dob, gender, mother_name, father_name, village, sector, registered_by) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             
-            $result = execute_query($query, 'sssssssi', [
-                $child_name, $dob, $gender, $mother_name, $father_name, $village, $sector, $_SESSION['user_id']
+            $query = "INSERT INTO births (child_name, date_of_birth, place_of_birth, village, sector, gender, mother_name, father_name, registered_by) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $result = execute_query($query, 'ssssssssi', [
+                $child_name, $date_of_birth, $place_of_birth, $village, $sector, $gender, $mother_name, $father_name, $_SESSION['user_id']
             ]);
             
             if ($result) {
-                $birth_id = $result; // This will be the inserted ID
+                $birth_id = $result; 
                 header("Location: register_birth.php?success=Birth registered successfully! Birth ID: $birth_id");
                 exit();
             } else {
@@ -55,8 +60,9 @@ include 'includes/header.php';
             </div>
             <div class="card-body">
                 <?php if (!empty($success)): ?>
-                    <div class="alert alert-success">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <?php endif; ?>
                 
@@ -84,11 +90,11 @@ include 'includes/header.php';
                         
                         <div class="col-md-3">
                             <div class="mb-3">
-                                <label for="dob" class="form-label">
+                                <label for="date_of_birth" class="form-label">
                                     <i class="fas fa-calendar"></i> Date of Birth *
                                 </label>
-                                <input type="date" class="form-control" id="dob" name="dob" 
-                                       value="<?php echo isset($_POST['dob']) ? $_POST['dob'] : ''; ?>"
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="<?php echo isset($_POST['date_of_birth']) ? $_POST['date_of_birth'] : ''; ?>"
                                        max="<?php echo date('Y-m-d'); ?>" required>
                                 <div class="invalid-feedback">
                                     Please provide a valid date of birth.
@@ -97,6 +103,48 @@ include 'includes/header.php';
                         </div>
                         
                         <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="place_of_birth" class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Place of Birth *
+                                </label>
+                                <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" 
+                                       value="<?php echo isset($_POST['place_of_birth']) ? htmlspecialchars($_POST['place_of_birth']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the place of birth.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="village" class="form-label">
+                                    <i class="fas fa-home"></i> Village *
+                                </label>
+                                <input type="text" class="form-control" id="village" name="village" 
+                                       value="<?php echo isset($_POST['village']) ? htmlspecialchars($_POST['village']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the village.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="sector" class="form-label">
+                                    <i class="fas fa-map"></i> Sector *
+                                </label>
+                                <input type="text" class="form-control" id="sector" name="sector" 
+                                       value="<?php echo isset($_POST['sector']) ? htmlspecialchars($_POST['sector']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the sector.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="gender" class="form-label">
                                     <i class="fas fa-venus-mars"></i> Gender *
@@ -111,9 +159,7 @@ include 'includes/header.php';
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
+                        
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="mother_name" class="form-label">
@@ -144,43 +190,13 @@ include 'includes/header.php';
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="village" class="form-label">
-                                    <i class="fas fa-map-marker-alt"></i> Village *
-                                </label>
-                                <input type="text" class="form-control" id="village" name="village" 
-                                       value="<?php echo isset($_POST['village']) ? htmlspecialchars($_POST['village']) : ''; ?>"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Please provide the village name.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="sector" class="form-label">
-                                    <i class="fas fa-location-arrow"></i> Sector *
-                                </label>
-                                <input type="text" class="form-control" id="sector" name="sector" 
-                                       value="<?php echo isset($_POST['sector']) ? htmlspecialchars($_POST['sector']) : ''; ?>"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Please provide the sector name.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label class="form-label">
                                     <i class="fas fa-user"></i> Registered By
                                 </label>
                                 <input type="text" class="form-control" 
-                                       value="<?php echo $_SESSION['name']; ?> (<?php echo ucfirst($_SESSION['role']); ?>)" 
+                                       value="<?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : 'Unknown User'; ?> (<?php echo isset($_SESSION['role']) ? ucfirst($_SESSION['role']) : 'Unknown'; ?>)" 
                                        readonly>
                             </div>
                         </div>
@@ -206,7 +222,7 @@ include 'includes/header.php';
 </div>
 
 <script>
-// Bootstrap form validation
+
 (function() {
     'use strict';
     window.addEventListener('load', function() {

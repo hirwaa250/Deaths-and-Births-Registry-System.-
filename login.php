@@ -10,15 +10,15 @@ if (is_logged_in()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = trim($_POST['email']);
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
     
-    if (empty($email) || empty($password)) {
+    if (empty($username) || empty($password)) {
         $error = 'Please fill in all fields.';
     } else {
         // Check user credentials
-        $query = "SELECT id, name, email, password, role FROM users WHERE email = ?";
-        $result = execute_query($query, 's', [$email]);
+        $query = "SELECT id, username, full_name, password, role FROM users WHERE username = ?";
+        $result = execute_query($query, 's', [$username]);
         
         if ($result && $result->num_rows > 0) {
             $user = $result->fetch_assoc();
@@ -26,17 +26,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (password_verify($password, $user['password'])) {
                 // Login successful
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['name'] = $user['name'];
-                $_SESSION['email'] = $user['email'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role'] = $user['role'];
                 
-                header('Location: index.php');
+                header('Location: dashboard.php');
                 exit();
             } else {
-                $error = 'Invalid email or password.';
+                $error = 'Invalid username or password.';
             }
         } else {
-            $error = 'Invalid email or password.';
+            $error = 'Invalid username or password.';
         }
     }
 }
@@ -104,19 +104,17 @@ $page_title = 'Login - Village Register System';
                         
                         <form method="POST" action="">
                             <div class="mb-3">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope"></i> Email Address
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user"></i> Username
                                 </label>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                                       required>
+                                <input type="text" class="form-control" id="username" name="username" aria-label="Username" required>
                             </div>
                             
                             <div class="mb-4">
                                 <label for="password" class="form-label">
                                     <i class="fas fa-lock"></i> Password
                                 </label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <input type="password" class="form-control" id="password" name="password" aria-label="Password" required>
                             </div>
                             
                             <button type="submit" class="btn btn-primary btn-login w-100">
@@ -126,12 +124,9 @@ $page_title = 'Login - Village Register System';
                         
                         <hr class="my-4">
                         
-                        <div class="text-center">
-                            <small class="text-muted">
-                                <strong>Demo Credentials:</strong><br>
-                                Admin: admin@village.com / admin123<br>
-                                Officer: officer@village.com / officer123
-                            </small>
+                        <div class="text-center mt-3">
+                            <a href="register.php" class="text-decoration-none">
+                                <i class="fas fa-user-plus"></i> Don't have an account? Register!!</a>
                         </div>
                     </div>
                 </div>

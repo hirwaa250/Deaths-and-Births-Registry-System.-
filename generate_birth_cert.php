@@ -6,18 +6,14 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 
 require_login();
-
-// Get birth record ID
 $birth_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$birth_id) {
     header('Location: view_births.php?error=Invalid birth record ID');
     exit();
 }
-
-// Fetch birth record
-$query = "SELECT b.*, u.name as registered_by_name 
-          FROM birth_records b 
+$query = "SELECT b.*, u.full_name as registered_by_name
+          FROM births b 
           JOIN users u ON b.registered_by = u.id 
           WHERE b.id = ?";
 $result = execute_query($query, 'i', [$birth_id]);
@@ -29,7 +25,7 @@ if (!$result || $result->num_rows == 0) {
 
 $birth_record = $result->fetch_assoc();
 
-// Generate certificate HTML content
+
 $certificate_content = '
 <!DOCTYPE html>
 <html>
@@ -187,7 +183,7 @@ $certificate_content = '
             </tr>
             <tr>
                 <td class="label">Date of Birth:</td>
-                <td class="value">' . date('F d, Y', strtotime($birth_record['dob'])) . '</td>
+                <td class="value">' . date('F d, Y', strtotime($birth_record['date_of_birth'])) . '</td>
             </tr>
             <tr>
                 <td class="label">Gender:</td>
@@ -203,11 +199,17 @@ $certificate_content = '
             </tr>
             <tr>
                 <td class="label">Place of Birth:</td>
-                <td class="value">' . htmlspecialchars($birth_record['village']) . ', ' . htmlspecialchars($birth_record['sector']) . '</td>
+                <td class="value">
+                    ' .
+                        (isset($birth_record['village']) && $birth_record['village'] ? htmlspecialchars($birth_record['village']) : '') .
+                        ((isset($birth_record['village']) && $birth_record['village'] && isset($birth_record['sector']) && $birth_record['sector']) ? ' ' : '') .
+                        (isset($birth_record['sector']) && $birth_record['sector'] ? htmlspecialchars($birth_record['sector']) : '') .
+                    '
+                </td>
             </tr>
             <tr>
                 <td class="label">Registration Date:</td>
-                <td class="value">' . date('F d, Y', strtotime($birth_record['registration_date'])) . '</td>
+                <td class="value">' . date('F d, Y', strtotime($birth_record['registered_at'])) . '</td>
             </tr>
             <tr>
                 <td class="label">Registered By:</td>
@@ -256,34 +258,29 @@ $certificate_content = '
 </body>
 </html>';
 
-// Configure dompdf options
 $options = new Options();
 $options->set('defaultFont', 'Times-Roman');
 $options->set('isHtml5ParserEnabled', true);
 $options->set('isPhpEnabled', false);
-$options->set('isRemoteEnabled', true); // Enable for loading images
+$options->set('isRemoteEnabled', true); 
 
-// Create new Dompdf instance
 $dompdf = new Dompdf($options);
 
-// Load HTML content
 $dompdf->loadHtml($certificate_content);
 
-// Set paper size and orientation
+
 $dompdf->setPaper('A4', 'portrait');
 
-// Render PDF
 $dompdf->render();
 
-// Generate filename
+
 $filename = 'birth_certificate_' . str_replace(' ', '_', strtolower($birth_record['child_name'])) . '_' . date('Y-m-d') . '.pdf';
 
-// Set headers and output PDF
+
 header('Content-Type: application/pdf');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: private, max-age=0, must-revalidate');
 header('Pragma: public');
 
-// Stream PDF to browser
 echo $dompdf->output();
 ?>

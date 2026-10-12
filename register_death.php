@@ -6,34 +6,45 @@ $page_title = 'Register Death - Village Register System';
 $success = '';
 $error = '';
 
+if (isset($_GET['success'])) {
+    $success = htmlspecialchars($_GET['success']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Validate and sanitize input
-    $deceased_name = trim($_POST['deceased_name']);
-    $dod = $_POST['dod'];
-    $cause_of_death = trim($_POST['cause_of_death']);
-    $family_contact = trim($_POST['family_contact']);
-    $village = trim($_POST['village']);
-    $sector = trim($_POST['sector']);
     
-    // Basic validation
-    if (empty($deceased_name) || empty($dod) || empty($cause_of_death) || 
-        empty($family_contact) || empty($village) || empty($sector)) {
+    $deceased_name = isset($_POST['deceased_name']) ? trim($_POST['deceased_name']) : '';
+    $date_of_death = isset($_POST['date_of_death']) ? $_POST['date_of_death'] : '';
+    $place_of_death = isset($_POST['place_of_death']) ? trim($_POST['place_of_death']) : '';
+    $family_contact = isset($_POST['family_contact']) ? trim($_POST['family_contact']) : '';
+    $village = isset($_POST['village']) ? trim($_POST['village']) : '';
+    $sector = isset($_POST['sector']) ? trim($_POST['sector']) : '';
+    $gender = isset($_POST['gender']) ? $_POST['gender'] : '';
+    $cause_of_death = isset($_POST['cause_of_death']) ? trim($_POST['cause_of_death']) : '';
+    
+    
+    if (empty($deceased_name) || empty($date_of_death) || empty($place_of_death) || empty($family_contact) || empty($village) || empty($sector) || empty($gender) || empty($cause_of_death)) {
         $error = 'All fields are required.';
     } else {
-        // Check if date is not in the future
-        if (strtotime($dod) > time()) {
+        if (strtotime($date_of_death) > time()) {
             $error = 'Date of death cannot be in the future.';
         } else {
-            // Insert death record
-            $query = "INSERT INTO death_records (deceased_name, dod, cause_of_death, family_contact, village, sector, registered_by) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             
-            $result = execute_query($query, 'ssssssi', [
-                $deceased_name, $dod, $cause_of_death, $family_contact, $village, $sector, $_SESSION['user_id']
+            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+            if (!$user_id) {
+                die('Error: No user is logged in.');
+            }
+            
+            $check_user_query = "SELECT id, username, full_name, role FROM users WHERE id = ?";
+            $check_user_result = execute_query($check_user_query, 'i', [$user_id]);
+            if (!$check_user_result || $check_user_result->num_rows == 0) {
+                die('Error: Logged in user does not exist in users table.');
+            }
+            $query = "INSERT INTO deaths (deceased_name, date_of_death, place_of_death, family_contact, village, sector, gender, cause_of_death, registered_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $result = execute_query($query, 'ssssssssi', [
+                $deceased_name, $date_of_death, $place_of_death, $family_contact, $village, $sector, $gender, $cause_of_death, $_SESSION['user_id']
             ]);
-            
             if ($result) {
-                $death_id = $result; // This will be the inserted ID
+                $death_id = $result;
                 header("Location: register_death.php?success=Death registered successfully! Death ID: $death_id");
                 exit();
             } else {
@@ -52,10 +63,11 @@ include 'includes/header.php';
             <div class="card-header bg-danger text-white">
                 <h4><i class="fas fa-cross"></i> Register New Death</h4>
             </div>
-            <div class="card-body">
+        <div class="card-body" style="padding-left: 2rem; padding-right: 2rem;">
                 <?php if (!empty($success)): ?>
-                    <div class="alert alert-success">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <?php endif; ?>
                 
@@ -67,7 +79,7 @@ include 'includes/header.php';
                 
                 <form method="POST" action="" class="needs-validation" novalidate>
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="deceased_name" class="form-label">
                                     <i class="fas fa-user"></i> Deceased Person's Full Name *
@@ -80,23 +92,95 @@ include 'includes/header.php';
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="dod" class="form-label">
-                                    <i class="fas fa-calendar"></i> Date of Death *
+                                <label for="date_of_death" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i> Date of Death *
                                 </label>
-                                <input type="date" class="form-control" id="dod" name="dod" 
-                                       value="<?php echo isset($_POST['dod']) ? $_POST['dod'] : ''; ?>"
-                                       max="<?php echo date('Y-m-d'); ?>" required>
+                                <input type="date" class="form-control" id="date_of_death" name="date_of_death" 
+                                       value="<?php echo isset($_POST['date_of_death']) ? htmlspecialchars($_POST['date_of_death']) : ''; ?>"
+                                       required>
                                 <div class="invalid-feedback">
-                                    Please provide a valid date of death.
+                                    Please provide the date of death.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="place_of_death" class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Place of Death *
+                                </label>
+                                <input type="text" class="form-control" id="place_of_death" name="place_of_death" 
+                                       value="<?php echo isset($_POST['place_of_death']) ? htmlspecialchars($_POST['place_of_death']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the place of death.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="village" class="form-label">
+                                    <i class="fas fa-home"></i> Village *
+                                </label>
+                                <input type="text" class="form-control" id="village" name="village" 
+                                       value="<?php echo isset($_POST['village']) ? htmlspecialchars($_POST['village']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the village.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="sector" class="form-label">
+                                    <i class="fas fa-map"></i> Sector *
+                                </label>
+                                <input type="text" class="form-control" id="sector" name="sector" 
+                                       value="<?php echo isset($_POST['sector']) ? htmlspecialchars($_POST['sector']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide the sector.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">
+                                    <i class="fas fa-venus-mars"></i> Gender *
+                                </label>
+                                <select class="form-control" id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                    <option value="Female" <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                    <option value="Other" <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Other') ? 'selected' : ''; ?>>Other</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select the gender.
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="family_contact" class="form-label">
+                                    <i class="fas fa-phone"></i> Family Contact *
+                                </label>
+                                <input type="text" class="form-control" id="family_contact" name="family_contact" 
+                                       value="<?php echo isset($_POST['family_contact']) ? htmlspecialchars($_POST['family_contact']) : ''; ?>"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Please provide a family contact.
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="cause_of_death" class="form-label">
@@ -115,58 +199,11 @@ include 'includes/header.php';
                     <div class="row">
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label for="family_contact" class="form-label">
-                                    <i class="fas fa-phone"></i> Family Contact Person *
-                                </label>
-                                <input type="text" class="form-control" id="family_contact" name="family_contact" 
-                                       value="<?php echo isset($_POST['family_contact']) ? htmlspecialchars($_POST['family_contact']) : ''; ?>"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Please provide a family contact person.
-                                </div>
-                                <div class="form-text">Name and contact information of the family representative.</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="village" class="form-label">
-                                    <i class="fas fa-map-marker-alt"></i> Village *
-                                </label>
-                                <input type="text" class="form-control" id="village" name="village" 
-                                       value="<?php echo isset($_POST['village']) ? htmlspecialchars($_POST['village']) : ''; ?>"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Please provide the village name.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="sector" class="form-label">
-                                    <i class="fas fa-location-arrow"></i> Sector *
-                                </label>
-                                <input type="text" class="form-control" id="sector" name="sector" 
-                                       value="<?php echo isset($_POST['sector']) ? htmlspecialchars($_POST['sector']) : ''; ?>"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Please provide the sector name.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="mb-3">
                                 <label class="form-label">
                                     <i class="fas fa-user"></i> Registered By
                                 </label>
                                 <input type="text" class="form-control" 
-                                       value="<?php echo $_SESSION['name']; ?> (<?php echo ucfirst($_SESSION['role']); ?>)" 
+                                       value="<?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : ''; ?> (<?php echo isset($_SESSION['role']) ? ucfirst($_SESSION['role']) : ''; ?>)" 
                                        readonly>
                             </div>
                         </div>
@@ -192,7 +229,7 @@ include 'includes/header.php';
 </div>
 
 <script>
-// Bootstrap form validation
+
 (function() {
     'use strict';
     window.addEventListener('load', function() {

@@ -1,206 +1,127 @@
 <?php
-require_once 'includes/auth.php';
-require_login();
-
-$page_title = 'Dashboard - Village Register System';
-
-// Get statistics
-$birth_count_query = "SELECT COUNT(*) as count FROM birth_records";
-$birth_result = execute_query($birth_count_query);
-$birth_count = $birth_result ? $birth_result->fetch_assoc()['count'] : 0;
-
-$death_count_query = "SELECT COUNT(*) as count FROM death_records";
-$death_result = execute_query($death_count_query);
-$death_count = $death_result ? $death_result->fetch_assoc()['count'] : 0;
-
-// Get recent registrations
-$recent_births_query = "SELECT b.*, u.name as registered_by_name FROM birth_records b 
-                       JOIN users u ON b.registered_by = u.id 
-                       ORDER BY b.registration_date DESC LIMIT 5";
-$recent_births = execute_query($recent_births_query);
-
-$recent_deaths_query = "SELECT d.*, u.name as registered_by_name FROM death_records d 
-                       JOIN users u ON d.registered_by = u.id 
-                       ORDER BY d.registration_date DESC LIMIT 5";
-$recent_deaths = execute_query($recent_deaths_query);
-
-include 'includes/header.php';
+session_start();
+$logged_in = isset($_SESSION['user_id']);
+if (!$logged_in) {
+    header('Location: login.php');
+    exit();
+} else {
+    header('Location: dashboard.php');
+    exit();
+}
+$page_title = 'Welcome to Village Register System';
 ?>
-
-<div class="row mt-4">
-    <div class="col-md-12">
-        <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
-        <p class="text-muted">Welcome back, <?php echo $_SESSION['name']; ?>! Here's an overview of the village records.</p>
-    </div>
-</div>
-
-<!-- Statistics Cards -->
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4><?php echo $birth_count; ?></h4>
-                        <p class="mb-0">Total Births</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-baby fa-2x opacity-75"></i>
-                    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $page_title; ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <style>
+        body {
+            background: url('assets/village-bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            position: relative;
+        }
+        .homepage-overlay {
+            background: rgba(44, 62, 80, 0.7);
+            min-height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+        }
+        .homepage-content {
+            position: relative;
+            z-index: 2;
+            color: #fff;
+            padding-top: 80px;
+            padding-bottom: 40px;
+        }
+        .animated-img {
+            width: 120px;
+            margin: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            transition: transform 0.5s;
+        }
+        .animated-img:hover {
+            transform: scale(1.1) rotate(-3deg);
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .cta-btn {
+            font-size: 1.2rem;
+            padding: 12px 32px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="homepage-overlay"></div>
+    <div class="container homepage-content text-center">
+        <h1 class="display-4 fw-bold mb-4"><i class="fas fa-clipboard-list"></i> Village Birth & Death Register System</h1>
+        <p class="lead mb-5">A modern, secure, and user-friendly platform for managing vital records in your community.<br>Built with PHP, MySQL, JavaScript, and Bootstrap.</p>
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-3">
+                <div class="mb-4">
+                    <i class="fas fa-user-shield feature-icon text-warning"></i>
+                    <h5>Secure Authentication</h5>
+                    <p>Role-based access for Admins and Officers. All data is protected and private.</p>
                 </div>
             </div>
-            <div class="card-footer">
-                <a href="view_births.php" class="text-white text-decoration-none">
-                    View all births <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-danger">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4><?php echo $death_count; ?></h4>
-                        <p class="mb-0">Total Deaths</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-cross fa-2x opacity-75"></i>
-                    </div>
+            <div class="col-md-3">
+                <div class="mb-4">
+                    <i class="fas fa-baby feature-icon text-info"></i>
+                    <h5>Birth & Death Records</h5>
+                    <p>Register, search, and manage vital records with ease and accuracy.</p>
                 </div>
             </div>
-            <div class="card-footer">
-                <a href="view_deaths.php" class="text-white text-decoration-none">
-                    View all deaths <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4><?php echo $birth_count + $death_count; ?></h4>
-                        <p class="mb-0">Total Records</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-chart-bar fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer">
-                <span class="text-white">All registered records</span>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4><?php echo ucfirst($_SESSION['role']); ?></h4>
-                        <p class="mb-0">Your Role</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-user-shield fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer">
-                <span class="text-white">Access Level</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <a href="register_birth.php" class="btn btn-primary btn-lg w-100 mb-2">
-                            <i class="fas fa-baby"></i> Register New Birth
-                        </a>
-                    </div>
-                    <div class="col-md-6">
-                        <a href="register_death.php" class="btn btn-danger btn-lg w-100 mb-2">
-                            <i class="fas fa-cross"></i> Register New Death
-                        </a>
-                    </div>
+            <div class="col-md-3">
+                <div class="mb-4">
+                    <i class="fas fa-file-pdf feature-icon text-danger"></i>
+                    <h5>PDF Certificates</h5>
+                    <p>Generate professional, print-ready certificates for official use.</p>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Recent Activities -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-baby"></i> Recent Birth Registrations</h5>
-            </div>
-            <div class="card-body">
-                <?php if ($recent_births && $recent_births->num_rows > 0): ?>
-                    <div class="list-group list-group-flush">
-                        <?php while ($birth = $recent_births->fetch_assoc()): ?>
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($birth['child_name']); ?></h6>
-                                    <small><?php echo date('M d, Y', strtotime($birth['registration_date'])); ?></small>
-                                </div>
-                                <p class="mb-1">
-                                    <small>Born: <?php echo date('M d, Y', strtotime($birth['dob'])); ?> | 
-                                    <?php echo htmlspecialchars($birth['village']); ?>, <?php echo htmlspecialchars($birth['sector']); ?></small>
-                                </p>
-                                <small>Registered by: <?php echo htmlspecialchars($birth['registered_by_name']); ?></small>
-                            </div>
-                        <?php endwhile; ?>
-                    </div>
-                <?php else: ?>
-                    <p class="text-muted">No birth records found.</p>
-                <?php endif; ?>
-            </div>
+        <div class="d-flex justify-content-center flex-wrap mb-5">
+            <img src="assets/birth.png" class="animated-img" id="img1" alt="Birth Registration">
+            <img src="assets/death.png" class="animated-img" id="img2" alt="Death Registration">
+            <img src="assets/certificate.png" class="animated-img" id="img3" alt="Certificate">
+        </div>
+        <div class="mb-4">
+            <a href="login.php" class="btn btn-primary cta-btn"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="register_birth.php" class="btn btn-success cta-btn"><i class="fas fa-baby"></i> Register Birth</a>
+            <a href="register_death.php" class="btn btn-danger cta-btn"><i class="fas fa-cross"></i> Register Death</a>
+        </div>
+        <div class="mt-5">
+            <h4>How It Works</h4>
+            <ul class="list-unstyled text-start mx-auto" style="max-width: 600px;">
+                <li><i class="fas fa-check-circle text-success"></i> Login as Admin or Officer to access the dashboard.</li>
+                <li><i class="fas fa-check-circle text-success"></i> Register new births and deaths using simple forms.</li>
+                <li><i class="fas fa-check-circle text-success"></i> Search, view, and manage all records securely.</li>
+                <li><i class="fas fa-check-circle text-success"></i> Generate and print official certificates as needed.</li>
+            </ul>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-cross"></i> Recent Death Registrations</h5>
-            </div>
-            <div class="card-body">
-                <?php if ($recent_deaths && $recent_deaths->num_rows > 0): ?>
-                    <div class="list-group list-group-flush">
-                        <?php while ($death = $recent_deaths->fetch_assoc()): ?>
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($death['deceased_name']); ?></h6>
-                                    <small><?php echo date('M d, Y', strtotime($death['registration_date'])); ?></small>
-                                </div>
-                                <p class="mb-1">
-                                    <small>Died: <?php echo date('M d, Y', strtotime($death['dod'])); ?> | 
-                                    <?php echo htmlspecialchars($death['village']); ?>, <?php echo htmlspecialchars($death['sector']); ?></small>
-                                </p>
-                                <small>Registered by: <?php echo htmlspecialchars($death['registered_by_name']); ?></small>
-                            </div>
-                        <?php endwhile; ?>
-                    </div>
-                <?php else: ?>
-                    <p class="text-muted">No death records found.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
+    <script>
 
-<?php include 'includes/footer.php'; ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imgs = [document.getElementById('img1'), document.getElementById('img2'), document.getElementById('img3')];
+            let angle = 0;
+            setInterval(() => {
+                angle += 2;
+                imgs.forEach((img, i) => {
+                    img.style.transform = `scale(1.05) rotate(${Math.sin(angle/20 + i)*8}deg)`;
+                });
+            }, 50);
+        });
+    </script>
+</body>
+</html>

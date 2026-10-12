@@ -3,7 +3,6 @@ require_once 'includes/auth.php';
 require_once 'pdf/SimplePDF.php';
 require_login();
 
-// Get death record ID
 $death_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$death_id) {
@@ -11,9 +10,9 @@ if (!$death_id) {
     exit();
 }
 
-// Fetch death record
-$query = "SELECT d.*, u.name as registered_by_name 
-          FROM death_records d 
+
+$query = "SELECT d.*, u.full_name as registered_by_name 
+          FROM deaths d 
           JOIN users u ON d.registered_by = u.id 
           WHERE d.id = ?";
 $result = execute_query($query, 'i', [$death_id]);
@@ -25,7 +24,7 @@ if (!$result || $result->num_rows == 0) {
 
 $death_record = $result->fetch_assoc();
 
-// Generate certificate HTML content
+
 $certificate_content = '
 <div class="header">
     <h1 class="title">REPUBLIC OF RWANDA</h1>
@@ -54,7 +53,7 @@ $certificate_content = '
                 Date of Death:
             </td>
             <td style="padding: 15px; border: 1px solid #ddd;">
-                ' . date('F d, Y', strtotime($death_record['dod'])) . '
+                ' . date('F d, Y', strtotime($death_record['date_of_death'])) . '
             </td>
         </tr>
         <tr>
@@ -86,7 +85,7 @@ $certificate_content = '
                 Registration Date:
             </td>
             <td style="padding: 15px; border: 1px solid #ddd;">
-                ' . date('F d, Y', strtotime($death_record['registration_date'])) . '
+                ' . date('F d, Y', strtotime($death_record['registered_at'])) . '
             </td>
         </tr>
     </table>
@@ -125,11 +124,10 @@ $certificate_content = '
     </div>
 </div>';
 
-// Create PDF
+
 $pdf = new SimplePDF('Death Certificate - ' . $death_record['deceased_name']);
 $pdf->setContent($certificate_content);
 
-// Check if download is requested
 $download = isset($_GET['download']) && $_GET['download'] == '1';
 $filename = 'Death_Certificate_' . str_replace(' ', '_', $death_record['deceased_name']) . '_' . date('Y-m-d') . '.pdf';
 

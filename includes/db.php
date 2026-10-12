@@ -3,7 +3,7 @@
 $host = 'localhost';
 $username = 'root';
 $password = '';
-$database = 'village_register';
+$database = 'village_registry';
 
 // Create connection using mysqli
 $conn = new mysqli($host, $username, $password, $database);

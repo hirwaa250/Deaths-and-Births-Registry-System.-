@@ -6,6 +6,7 @@
     <title><?php echo isset($page_title) ? $page_title : 'Village Register System'; ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <style>
         .navbar-brand {
             font-weight: bold;
@@ -37,10 +38,16 @@
             background-color: #2c3e50;
             color: white !important;
         }
+        .btn-primary, .btn-danger, .btn-secondary, .btn-outline-secondary {
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary:hover, .btn-danger:hover, .btn-secondary:hover, .btn-outline-secondary:hover {
+            filter: brightness(1.1);
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="Main navigation">
         <div class="container">
             <a class="navbar-brand" href="index.php">
                 <i class="fas fa-clipboard-list"></i> Village Register System
@@ -81,7 +88,7 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user"></i> <?php echo $_SESSION['name']; ?> (<?php echo ucfirst($_SESSION['role']); ?>)
+                            <i class="fas fa-user"></i> <?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : 'User'; ?> (<?php echo isset($_SESSION['role']) ? ucfirst($_SESSION['role']) : 'Unknown'; ?>)
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="logout.php">
