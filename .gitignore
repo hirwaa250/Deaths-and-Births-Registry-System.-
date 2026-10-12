@@ -1,0 +1,13 @@
+# Live server database credentials
+includes/config.php
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak

@@ -5,6 +5,11 @@ $username = 'root';
 $password = '';
 $database = 'village_registry';
 
+// Live server settings (not committed) override the local XAMPP defaults
+if (file_exists(__DIR__ . '/config.php')) {
+    require __DIR__ . '/config.php';
+}
+
 // Create connection using mysqli
 $conn = new mysqli($host, $username, $password, $database);
 
